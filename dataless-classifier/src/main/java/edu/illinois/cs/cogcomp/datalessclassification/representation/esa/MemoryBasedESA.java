@@ -85,28 +85,35 @@ public class MemoryBasedESA extends AEmbedding<Integer> {
                 int count = 0;
 
                 String line;
+                String[] conceptValues;
+                String[] arr;
+                String[] tokens;
+                double idf;
+                Map<Integer, Double> map;
+                SparseVector<Integer> sparseVector;
+                String word;
 
                 while ((line = reader.readLine()) != null) {
                     line = line.trim();
 
                     if (line.length() > 0) {
-                        String[] arr = line.split("\t");
+                        arr = line.split("\t");
 
-                        String word = arr[0];
+                        word = arr[0];
 
-                        double idf = Double.parseDouble(arr[1]);
+                        idf = Double.parseDouble(arr[1]);
                         wordIDF.put(word, idf);
 
-                        String[] conceptValues = arr[2].split(";");
+                        conceptValues = arr[2].split(";");
 
-                        Map<Integer, Double> map = new HashMap<>();
-
+                        map = new HashMap<>();
+                        
                         for (String conceptValue : conceptValues) {
-                            String[] tokens = conceptValue.split(",");
+                            tokens = conceptValue.split(",");
                             map.put(Integer.parseInt(tokens[0]), Double.parseDouble(tokens[1]));
                         }
 
-                        SparseVector<Integer> sparseVector = new SparseVector<>(map);
+                        sparseVector = new SparseVector<>(map);
                         vectors.put(word, sparseVector);
                     }
 
@@ -150,17 +157,19 @@ public class MemoryBasedESA extends AEmbedding<Integer> {
                 pageIdTitleMapping = new HashMap<>();
 
                 String line;
+                String[] tokens;
+                Integer id;
 
                 while ((line = bf.readLine()) != null) {
                     if (line.length() == 0)
                         continue;
 
-                    String[] tokens = line.split("\t");
+                    tokens = line.split("\t");
 
                     if (tokens.length != 2)
                         continue;
 
-                    Integer id = Integer.parseInt(tokens[0].trim());
+                    id = Integer.parseInt(tokens[0].trim());
 
                     if (!pageIdTitleMapping.containsKey(id)) {
                         pageIdTitleMapping.put(id, tokens[1]);
@@ -220,9 +229,9 @@ public class MemoryBasedESA extends AEmbedding<Integer> {
 
         SparseVector<String> sparseVector = new SparseVector<>();
         Map<String, Double> outMap = new LinkedHashMap<>();
-
+        String concept;
         for (Integer key : map.keySet()) {
-            String concept = getConceptFromID(key);
+            concept = getConceptFromID(key);
 
             if (concept != null)
                 outMap.put(concept, map.get(key));
@@ -271,13 +280,15 @@ public class MemoryBasedESA extends AEmbedding<Integer> {
         double vsum = 0;
         double norm;
 
+        double tf;
+        double tfidf;
         for (String strTerm : tfidfMap.keySet()) {
-            double tf = tfidfMap.get(strTerm);
+            tf = tfidfMap.get(strTerm);
 
             tf = 1 + Math.log(tf);
 
             if (wordIDF.containsKey(strTerm)) {
-                double tfidf = wordIDF.get(strTerm) * tf;
+                tfidf = wordIDF.get(strTerm) * tf;
 
                 vsum += tfidf * tfidf;
 
@@ -288,7 +299,7 @@ public class MemoryBasedESA extends AEmbedding<Integer> {
         norm = Math.sqrt(vsum);
 
         for (String strTerm : tfidfMap.keySet()) {
-            double tfidf = tfidfMap.get(strTerm);
+            tfidf = tfidfMap.get(strTerm);
             tfidfMap.put(strTerm, tfidf / norm);
         }
 
@@ -311,9 +322,10 @@ public class MemoryBasedESA extends AEmbedding<Integer> {
 
         List<Map<Integer, Double>> conceptMapList = new ArrayList<>();
         List<Double> weightList = new ArrayList<>();
+        SparseVector<Integer> sparseVector;
 
         for (String strTerm : termWeights.keySet()) {
-            SparseVector<Integer> sparseVector = getTermConceptVectorMap(strTerm, numConcepts);
+            sparseVector = getTermConceptVectorMap(strTerm, numConcepts);
 
             if ((sparseVector.size() > 0) && (termWeights.get(strTerm) > 0)) {
                 conceptMapList.add(sparseVector.getKeyValueMap());
